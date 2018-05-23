@@ -38,14 +38,14 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
     normal_distribution<double> dist_theta(theta,std[2]);
 
 
-    num_particles=100;       
+    num_particles=10;       
 
-    particles.reserve(100); //make room for 100 particles!
-    weights.reserve(100); //make room for 100 particles!
+//    particles.reserve(100); //make room for 100 particles!
+//   weights.reserve(100); //make room for 100 particles!
 
     p.weight = 1;
 
-    for(i=0; i < 100 ; i++)
+    for(i=0; i <  num_particles ; i++)
     {
         p.id = i;
         p.x = dist_x(gen);
@@ -53,7 +53,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
         p.theta = dist_theta(gen);
 
         particles.push_back(p);
-        weights.push_back(1);//XXXXXXX
+        weights.push_back(1);
     }
 
     is_initialized = true;
@@ -70,13 +70,13 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 
     for(int i=0; i < particles.size() ; i++ ) 
     {
-        float x0 = particles[i].x;
-        float y0 = particles[i].y;
-        float theta0 = particles[i].theta;
+        double x0 = particles[i].x;
+        double y0 = particles[i].y;
+        double theta0 = particles[i].theta;
 
-        float x;
-        float y;
-        float theta;
+        double x;
+        double y;
+        double theta;
 
         if( yaw_rate == 0 )
         {
@@ -126,37 +126,35 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 
     default_random_engine gen;
 
-    printf("obs size ; %d\n", observations.size());
-    printf("map size ; %d\n", map_landmarks.landmark_list.size());
 //return;
 
 
     double finalWeight = 1.0;
     double min=99999;
-    float stdx2 = std_landmark[0]*std_landmark[0];
-    float stdy2 = std_landmark[1]*std_landmark[1];
-    float stdxy = std_landmark[0]*std_landmark[1];
+    double stdxx = std_landmark[0]*std_landmark[0];
+    double stdyy = std_landmark[1]*std_landmark[1];
+    double stdxy = std_landmark[0]*std_landmark[1];
 
     for(int i=0; i < particles.size() ; i++ ) 
     {
-        float xp = particles[i].x;
-        float yp = particles[i].y;
-        float theta = particles[i].theta;
+        double xp = particles[i].x;
+        double yp = particles[i].y;
+        double theta = particles[i].theta;
 
-        float x;
-        float y;
+        double x;
+        double y;
 
         finalWeight = 1.0;
 
         for(int ii=0 ; ii < observations.size() ; ii++)
         {
             LandmarkObs obs = observations[ii];
-            float xc = obs.x;
-            float yc = obs.y;
+            double xc = obs.x;
+            double yc = obs.y;
 
             //transform observations(car) system  into global map system. 
-            float xm =  xp + cos(theta)*xc - sin(theta)*yc;
-            float ym =  yp + sin(theta)*xc - cos(theta)*yc;
+            double xm =  xp + cos(theta)*xc - sin(theta)*yc;
+            double ym =  yp + sin(theta)*xc + cos(theta)*yc;
 
             int closest_mark = 0 ; 
 
@@ -176,23 +174,24 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
             }
 
             //set the landmark id to this observation.
-            obs.id = map_landmarks.landmark_list[closest_mark].id_i;
+            // obs.id = map_landmarks.landmark_list[closest_mark].id_i;
 
-            float x = xm;
-            float y = ym;
+            double x = xm;
+            double y = ym;
 
-            float ux= map_landmarks.landmark_list[closest_mark].x_f;
-            float uy= map_landmarks.landmark_list[closest_mark].y_f;
+            double ux= map_landmarks.landmark_list[closest_mark].x_f;
+            double uy= map_landmarks.landmark_list[closest_mark].y_f;
 
-            float w  = -(  ( (x-ux)*(x-ux))/(2*stdx2) + ((y-uy)*(y-uy))/(2*stdy2) );
+            double w  = -(  ( (x-ux)*(x-ux))/(2*stdxx) + ((y-uy)*(y-uy))/(2*stdyy) );
 
             //calculate weight for this observation.
-            finalWeight *=  1/(2*PI* stdxy) * exp(w);
-            printf("XXXXXXXXXXXX %f  ", finalWeight);
+            double vvv = 1/(2*PI* stdxy) * exp(w);
+
+            finalWeight *=   vvv;
+
         }
         weights[i] = finalWeight;
         particles[i].weight =  finalWeight;
-        printf("\nXXXXweight %f\n",finalWeight);
     }
 
 }
